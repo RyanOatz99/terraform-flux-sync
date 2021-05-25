@@ -6,3 +6,11 @@ output "namespace" {
 output "public_key" {
   value = local.key_provided ? local.public_key : tls_private_key.this[0].public_key_openssh
 }
+
+output "repo" {
+  value = local.url
+}
+
+output "name" {
+  value = local.name
+}
