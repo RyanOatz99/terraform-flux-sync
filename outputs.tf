@@ -7,7 +7,7 @@ output "public_key" {
   value = local.key_provided ? local.public_key : tls_private_key.this[0].public_key_openssh
 }
 
-output "repo" {
+output "url" {
   value = local.url
 }
 
