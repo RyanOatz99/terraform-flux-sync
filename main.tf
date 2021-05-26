@@ -7,18 +7,35 @@ data "flux_sync" "this" {
   interval           = local.interval
 }
 
-# TODO: Syncs should be separate module. Maybe allow flux install module to configure multiple syncs.
 data "kubectl_file_documents" "this" {
   content = data.flux_sync.this.content
 }
 
 locals {
-  documents = [for doc in data.kubectl_file_documents.this.documents :
-    {
-      data : yamldecode(doc)
-      content : doc
-    }
+  native_docs = [for doc in data.kubectl_file_documents.this.documents : yamldecode(doc)]
+}
+
+locals {
+  git_repository_documents = [local.native_docs[0]]
+  kustomization_documents = [for idx, path in local.paths :
+    merge(
+      local.native_docs[1],
+      {
+        metadata = merge(
+          local.native_docs[1].metadata,
+          { name = format("%s-%s", data.flux_sync.this.name, idx) },
+        )
+        spec = merge(
+          local.native_docs[1].spec,
+          { path = format("./%s", path) },
+        )
+      }
+    )
   ]
+}
+
+locals {
+  documents = concat(local.git_repository_documents, local.kustomization_documents)
 }
 
 resource "kubectl_manifest" "this" {
@@ -26,10 +43,10 @@ resource "kubectl_manifest" "this" {
     lower(
       join(
         "/",
-        compact([yaml.data.apiVersion, yaml.data.kind, lookup(yaml.data.metadata, "namespace", ""), yaml.data.metadata.name]),
+        compact([yaml.apiVersion, yaml.kind, lookup(yaml.metadata, "namespace", ""), yaml.metadata.name]),
       )
     )
-    => yaml.content
+    => yamlencode(yaml)
   }
 
   yaml_body = each.value
