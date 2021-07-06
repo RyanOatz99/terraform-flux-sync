@@ -38,19 +38,14 @@ locals {
   documents = concat(local.git_repository_documents, local.kustomization_documents)
 }
 
-resource "kubectl_manifest" "this" {
-  for_each = { for yaml in local.documents :
-    lower(
-      join(
-        "/",
-        compact([yaml.apiVersion, yaml.kind, lookup(yaml.metadata, "namespace", ""), yaml.metadata.name]),
-      )
-    )
-    => yamlencode(yaml)
-  }
+resource "kubernetes_manifest" "this" {
+  provider = kubernetes-alpha
 
-  yaml_body = each.value
+  for_each = local.documents
+
+  manifest = yamldecode(each.value)
 }
+
 
 resource "tls_private_key" "this" {
   count = local.create_key ? 1 : 0
@@ -62,7 +57,7 @@ resource "tls_private_key" "this" {
 resource "kubernetes_secret" "this" {
   count = local.create_secret ? 1 : 0
 
-  depends_on = [kubectl_manifest.this]
+  depends_on = [kubernetes_manifest.this]
 
   metadata {
     name      = data.flux_sync.this.secret
