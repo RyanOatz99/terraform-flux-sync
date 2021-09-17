@@ -1,5 +1,7 @@
 # terraform-flux-sync
 
+MOVED TO OMNITEQ
+
 ## terraform-docs usage
 
 `sed -i '' '/^<!--- start terraform-docs --->/q' README.md && terraform-docs md . >> README.md`
