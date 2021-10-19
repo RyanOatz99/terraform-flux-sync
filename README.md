@@ -1,3 +1,5 @@
+# This module is now located at <https://registry.terraform.io/modules/OmniTeqSource/sync/flux/latest>
+
 # terraform-flux-sync
 
 ## terraform-docs usage
